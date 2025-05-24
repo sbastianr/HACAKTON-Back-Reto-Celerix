@@ -8,14 +8,15 @@ class Database:
         self.cursor = self.conn.cursor()
 
     def get_user_by_email(self, email):
-        self.cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+        self.cursor.execute("SELECT * FROM USUARIOS WHERE email = ?", (email,))
         return self.cursor.fetchone()
 
     # Función para obtener o crear usuario
-    def get_or_create_user(self, nombre, email):
-        self.cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+    def get_or_create_user(self, nombre, email, cedula):
+        self.cursor.execute("SELECT * FROM USUARIOS WHERE USU_CORREO = ?", (email,))
         user = self.cursor.fetchone()
         if not user:
-            self.cursor.execute("INSERT INTO users (id, nombre, email) VALUES (?, ?, ?)", (nombre, email))
+            self.cursor.execute("INSERT INTO USUARIOS (USU_NOMBRE, USU_CORREO, USU_ID_USUARIO) VALUES (?, ?, ?)", (nombre, email, cedula))
             self.conn.commit()
-        return {"nombre": nombre, "email": email}
+            return {"nombre": nombre, "email": email}
+        return None
