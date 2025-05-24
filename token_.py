@@ -3,7 +3,7 @@ from functools import wraps
 import jwt
 from flask import request
 
-from bd import BaseDeDatos
+from db import BaseDeDatos
 
 
 def token_required(f):
