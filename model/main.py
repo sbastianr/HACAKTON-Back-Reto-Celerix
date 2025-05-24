@@ -1,14 +1,19 @@
+import asyncio
 import datetime
+import os
 
 from flask import Flask, request, jsonify
 import httpx
 import jwt
+from dotenv import load_dotenv
 
 from model.db import Database
+from model.gemini_client import GeminiClient
 from util.google import verificar_token_google
 
 app = Flask(__name__)
 db = Database()
+load_dotenv(dotenv_path="../.env")
 SECRET_KEY = "test"
 
 @app.route("/register", methods=["POST"])
@@ -98,5 +103,15 @@ def consultar_procesos_by_nombre_razonsocial():
     except httpx.RequestError as e:
         return jsonify({'error': 'Error de conexión', 'message': str(e)}), 500
 
+
+def consulta_gemini():
+    gemini = GeminiClient()
+
+    prompt = "Explica brevemente cómo funcionan las audiencias judiciales en Colombia."
+
+    respuesta = gemini.generate_content(prompt)
+    print("\nRespuesta completa:\n", respuesta['candidates'][0]['content']['parts'][0]['text'].replace("*",""))
+
 if __name__ == '__main__':
+    consulta_gemini()
     app.run(debug=True)
