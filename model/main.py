@@ -6,7 +6,8 @@ from jwt import jwt
 from werkzeug.security import generate_password_hash, check_password_hash
 from db import Database
 from token_ import token_required
-
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 app = Flask(__name__)
 db = Database()
 app.config['SECRET_KEY'] = 'test'
@@ -15,16 +16,44 @@ app.config['SECRET_KEY'] = 'test'
 @app.route("/register", methods=["POST"])
 def register():
     data = request.get_json()
-    username = data.get("username")
-    password = data.get("password")
 
-    if db.get_user(username):
+    nombre = data.get("nombre")
+    correo = data.get("correo")
+
+    if db.get_user_by_email(correo):
         return jsonify({"error": "Usuario ya existe"}), 400
 
-    password_hash = generate_password_hash(password)
-    db.add_user(username, password_hash)
     return jsonify({"message": "Usuario registrado correctamente"}), 201
 
+# Endpoint para login con token de Google
+@app.route('/login', methods=['POST'])
+def login():
+    token = request.json.get('id_token')
+    if not token:
+        return jsonify({'error': 'Token no proporcionado'}), 400
+
+    try:
+        # Verificar token con Google
+        idinfo = id_token.verify_oauth2_token(token, google_requests.Request())
+
+        nombre = idinfo.get('name', '')
+        email = idinfo.get('email', '')
+
+        # Crear o recuperar usuario
+        usuario = get_user_by_email(email)
+
+        # Generar JWT propio
+        token_backend = jwt.encode({
+            'sub': usuario['id'],
+            'nombre': usuario['nombre'],
+            'email': usuario['email'],
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+        }, app.config['SECRET_KEY'], algorithm='HS256')
+
+        return jsonify({'token': token_backend})
+
+    except ValueError:
+        return jsonify({'error': 'Token inválido'}), 400
 @app.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
